@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Demo Native Image
+
+Parameters:
+  Stage:
+    Type: String
+
+Globals:
+  Function:
+    MemorySize: 10240
+    Timeout: 900
+    Environment:
+      Variables:
+        STAGE: !Sub '${Stage}'
+
+Resources:
+
+  DemoController:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'DemoController-${Stage}'
+      PackageType: Image
+      ImageUri: !Sub '023016403424.dkr.ecr.eu-west-1.amazonaws.com/${Stage}:${Stage}'
+      Events:
+        DemoEndpoints:
+          Type: Api
+          Properties:
+            Path: /demo
+            Method: ANY
+            RestApiId: !Ref GatewayApi
+
+  SecondController:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'SecondController-${Stage}'
+      PackageType: Image
+      ImageUri: !Sub '023016403424.dkr.ecr.eu-west-1.amazonaws.com/${Stage}:${Stage}'
+      Events:
+        DemoEndpoints:
+          Type: Api
+          Properties:
+            Path: /second
+            Method: ANY
+            RestApiId: !Ref GatewayApi
+
+#  DemoHandler:
+#    Type: AWS::Serverless::Function
+#    Properties:
+#      FunctionName: !Sub 'DemoHandler-${Stage}'
+#      PackageType: Image
+#      ImageUri: !Sub '023016403424.dkr.ecr.eu-west-1.amazonaws.com/${Stage}:${Stage}'
+#      ImageConfig:
+#        WorkingDirectory: '/function'
+#        EntryPoint: ["func"]
+#        Command: ["com.example.DemoHandler::execute"]
+#    Metadata:
+#      DockerTag: !Sub '${Stage}'
+#      DockerContext: ./build/docker
+#      Dockerfile: DockerfileNative
+
+  GatewayApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub 'GatewayApi-${Stage}'
+      StageName: !Sub '${Stage}'
+
+Outputs:
+  GatewayApi:
+    Description: URL for My MSE Gateway REST Api
+    Value:
+      Fn::Sub: https://${GatewayApi}.execute-api.${AWS::Region}.amazonaws.com/${Stage}/demo
+  Stage:
+    Description: Stage name
+    Value:
+      Fn::Sub: ${Stage}
